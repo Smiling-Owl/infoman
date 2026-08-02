@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CONFIDENTIAL: NHS IT Disaster</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ink: '#111111',
+                        paper: '#f4f4f0',
+                        alert: '#d92d20'
+                    },
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        mono: ['"Space Mono"', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- React, ReactDOM, Babel & Three.js -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <style>
+        body { 
+            background-color: #f4f4f0; 
+            color: #111111; 
+            overflow-x: hidden; 
+            scroll-behavior: smooth;
+        }
+
+        /* Noise Texture Overlay */
+        .noise::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 100;
+            opacity: 0.15;
+            background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noiseFilter)"/></svg>');
+        }
+
+        /* Stamp Animations */
+        @keyframes stamp-in {
+            0% { opacity: 0; transform: scale(5) rotate(-20deg); }
+            50% { opacity: 1; transform: scale(1) rotate(-5deg); }
+            60% { transform: scale(1.1) rotate(-5deg); }
+            100% { transform: scale(1) rotate(-5deg); opacity: 1; }
+        }
+        .stamp { 
+            border: 6px solid #d92d20; 
+            color: #d92d20; 
+            padding: 0.5rem 1.5rem; 
+            display: inline-block; 
+            font-weight: 900; 
+            text-transform: uppercase; 
+            letter-spacing: 0.1em;
+            opacity: 0;
+            animation: stamp-in 0.4s cubic-bezier(0.25, 1, 0.5, 1) 0.5s forwards;
+            box-shadow: inset 0 0 0 2px #d92d20, 0 0 0 2px #d92d20;
+            mix-blend-mode: multiply;
+        }
+
+        /* Screen Shake */
+        @keyframes shake {
+            0%, 100% { transform: translate(0, 0); }
+            10%, 30%, 50%, 70%, 90% { transform: translate(-4px, 4px) rotate(-1deg); }
+            20%, 40%, 60%, 80% { transform: translate(4px, -4px) rotate(1deg); }
+        }
+        .shake-trigger {
+            animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        /* Redaction Mechanic */
+        .redact-tape {
+            position: relative;
+            display: inline-block;
+            color: transparent;
+            cursor: crosshair;
+            padding: 0 4px;
+            transition: color 0s 0.2s; /* delays color reveal slightly */
+        }
+        .redact-tape::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #111111;
+            transform-origin: right;
+            transition: transform 0.6s cubic-bezier(0.86, 0, 0.07, 1);
+        }
+        .redact-tape.alert::after { background-color: #d92d20; }
+        .redact-tape.paper::after { background-color: #f4f4f0; }
+        
+        .redact-tape:hover::after, .redact-revealed::after { transform: scaleX(0); }
+        .redact-tape:hover, .redact-revealed { color: inherit; }
+
+        /* Snap scrolling setup */
+        .scroller {
+            height: 100vh;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+        }
+        .slide {
+            scroll-snap-align: start;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f4f4f0; border-left: 1px solid #111; }
+        ::-webkit-scrollbar-thumb { background: #111; }
+    </style>
+</head>
+<body class="noise">
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- COMPONENTS ---
+
+        // Teletype Effect for Headlines
+        const Typewriter = ({ text, delay = 0, speed = 40, className = "" }) => {
+            const [displayed, setDisplayed] = useState("");
+            useEffect(() => {
+                setDisplayed("");
+                let i = 0;
+                const timer = setTimeout(() => {
+                    const interval = setInterval(() => {
+                        setDisplayed(text.substring(0, i + 1));
+                        i++;
+                        if (i >= text.length) clearInterval(interval);
+                    }, speed);
+                    return () => clearInterval(interval);
+                }, delay);
+                return () => clearTimeout(timer);
+            }, [text, delay, speed]);
+
+            return (
+                <span className={className}>
+                    {displayed}
+                    <span className="animate-pulse bg-current inline-block w-[0.5em] h-[1em] ml-1 align-middle opacity-70"></span>
+                </span>
+            );
+        };
+
+        // Redaction Component
+        const Redacted = ({ children, type = 'ink' }) => {
+            return <span className={`redact-tape ${type}`}>{children}</span>;
+        };
+
+        // Three.js Background Component
+        const ThreeBackground = ({ glitchTrigger }) => {
+            const mountRef = useRef(null);
+
+            useEffect(() => {
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                mountRef.current.appendChild(renderer.domElement);
+
+                // Create geometric network
+                const geometry = new THREE.BufferGeometry();
+                const particlesCount = 400;
+                const posArray = new Float32Array(particlesCount * 3);
+                for(let i = 0; i < particlesCount * 3; i++) {
+                    posArray[i] = (Math.random() - 0.5) * 15;
+                }
+                geometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+                
+                // Using white material with difference blend mode adapts to light/dark backgrounds automatically
+                const material = new THREE.PointsMaterial({ size: 0.03, color: 0xffffff, transparent: true, opacity: 0.8 });
+                const particlesMesh = new THREE.Points(geometry, material);
+                
+                const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.2 });
+                const lineMesh = new THREE.LineSegments(geometry, lineMaterial); 
+
+                scene.add(particlesMesh);
+                scene.add(lineMesh);
+                camera.position.z = 4;
+
+                let frameId;
+                let mouseX = 0;
+                let mouseY = 0;
+                
+                const onMouseMove = (event) => {
+                    mouseX = event.clientX / window.innerWidth - 0.5;
+                    mouseY = event.clientY / window.innerHeight - 0.5;
+                }
+                window.addEventListener('mousemove', onMouseMove);
+
+                const animate = () => {
+                    frameId = requestAnimationFrame(animate);
+                    particlesMesh.rotation.y += 0.0005;
+                    particlesMesh.rotation.x += 0.0002;
+                    lineMesh.rotation.y += 0.0005;
+                    lineMesh.rotation.x += 0.0002;
+                    
+                    camera.position.x += (mouseX * 1 - camera.position.x) * 0.05;
+                    camera.position.y += (-mouseY * 1 - camera.position.y) * 0.05;
+                    camera.lookAt(scene.position);
+                    
+                    renderer.render(scene, camera);
+                };
+                animate();
+
+                const handleResize = () => {
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                };
+                window.addEventListener('resize', handleResize);
+
+                return () => {
+                    window.removeEventListener('resize', handleResize);
+                    window.removeEventListener('mousemove', onMouseMove);
+                    cancelAnimationFrame(frameId);
+                    if(mountRef.current) mountRef.current.removeChild(renderer.domElement);
+                    geometry.dispose();
+                    material.dispose();
+                    lineMaterial.dispose();
+                }
+            }, []);
+            
+            // Glitch effect hook
+            useEffect(() => {
+                if(glitchTrigger > 0 && mountRef.current) {
+                    const canvas = mountRef.current.querySelector('canvas');
+                    if(canvas) {
+                        // Extreme visual distortion
+                        canvas.style.filter = 'invert(1) sepia(1) saturate(5) hue-rotate(300deg) blur(2px)';
+                        canvas.style.transform = `scale(1.05) translate(${Math.random()*40 - 20}px, ${Math.random()*40 - 20}px)`;
+                        
+                        setTimeout(() => {
+                            canvas.style.filter = 'none';
+                            canvas.style.transform = 'scale(1) translate(0, 0)';
+                        }, 150 + Math.random() * 100);
+                    }
+                }
+            }, [glitchTrigger]);
+
+            return <div ref={mountRef} style={{ position: 'fixed', top: 0, left: 0, zIndex: -1, width: '100vw', height: '100vh', mixBlendMode: 'difference' }} />;
+        }
+
+        // --- SLIDES ---
+
+        const slidesData = [
+            { id: "intro", content: <IntroSlide /> },
+            { id: "mess", content: <TheMessSlide /> },
+            { id: "politics", content: <PoliticsSlide /> },
+            { id: "stakeholders", content: <StakeholdersSlide /> },
+            { id: "accountability", content: <AccountabilitySlide /> },
+            { id: "framework", content: <FrameworkSlide /> },
+        ];
+
+        function IntroSlide() {
+            return (
+                <div className="flex flex-col items-center justify-center h-full w-full p-12 border-b-[16px] border-ink">
+                    <div className="w-full max-w-6xl relative z-10">
+                        <div className="absolute -top-16 -left-8 md:-left-16 stamp text-3xl bg-paper">DECLASSIFIED</div>
+                        <h1 className="font-serif text-[12vw] md:text-[140px] leading-none tracking-tighter uppercase font-black mix-blend-darken">
+                            <Typewriter text="The £12.7B" delay={1000} speed={80} /><br/> 
+                            <span className="text-alert"><Typewriter text="Failure" delay={2000} speed={120} /></span>
+                        </h1>
+                        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 border-t-4 border-ink pt-6">
+                            <div>
+                                <p className="font-mono text-xs uppercase tracking-widest text-gray-500 mb-1">Subject</p>
+                                <p className="font-serif text-2xl font-bold bg-ink text-paper px-2 py-1 inline-block">NHS IT Programme (NPfIT)</p>
+                            </div>
+                            <div>
+                                <p className="font-mono text-xs uppercase tracking-widest text-gray-500 mb-1">Course</p>
+                                <p className="font-serif text-2xl font-bold">IT412 - Info Management</p>
+                            </div>
+                            <div>
+                                <p className="font-mono text-xs uppercase tracking-widest text-gray-500 mb-1">Status</p>
+                                <p className="font-serif text-2xl font-bold text-alert">CATASTROPHIC</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )
+        }
+
+        function TheMessSlide() {
+            return (
+                <div className="flex flex-col justify-center h-full w-full p-12 bg-ink text-paper border-b-[16px] border-alert">
+                    <div className="w-full max-w-6xl mx-auto z-10">
+                        <p className="font-mono text-sm uppercase tracking-widest text-alert mb-4">01 // The Mess</p>
+                        <h2 className="font-serif text-5xl md:text-8xl mb-12">How did a 'developed' country fail so massively?</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-12 font-mono text-sm md:text-base">
+                            <div className="border-l-4 border-alert pl-6 hover:bg-white/5 transition-colors p-2">
+                                <h3 className="font-bold text-xl mb-2 text-alert">Top-Down Management</h3>
+                                <p>Mandated centrally without consulting end-users. Systems did not align with local clinical workflows. <Redacted type="paper">Only 160 out of 9,000</Redacted> organizations adopted it.</p>
+                            </div>
+                            <div className="border-l-4 border-alert pl-6 hover:bg-white/5 transition-colors p-2">
+                                <h3 className="font-bold text-xl mb-2 text-alert">Unrealistic Scope</h3>
+                                <p>A "big bang" rollout of a one-size-fits-all electronic health record system for <Redacted type="paper">one of the world's largest organizations</Redacted>.</p>
+                            </div>
+                            <div className="border-l-4 border-alert pl-6 hover:bg-white/5 transition-colors p-2">
+                                <h3 className="font-bold text-xl mb-2 text-alert">"Stupendous Incompetence"</h3>
+                                <p>Ministers and leaders <Redacted type="paper">lacked the technical expertise</Redacted> and IT project management experience to oversee a mega-project.</p>
+                            </div>
+                            <div className="border-l-4 border-alert pl-6 hover:bg-white/5 transition-colors p-2">
+                                <h3 className="font-bold text-xl mb-2 text-alert">Vendor Lock-in</h3>
+                                <p>Over-reliance on massive IT vendors led to complex legal disputes. <Redacted type="alert">£39.2m spent purely on "legal support."</Redacted></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )
+        }
+
+        function PoliticsSlide() {
+            return (
+                <div className="flex flex-col justify-center h-full w-full p-12 border-b-[16px] border-ink">
+                    <div className="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 items-center z-10">
+                        <div>
+                            <h2 className="font-serif text-7xl md:text-[140px] leading-none font-black text-ink mb-6 mix-blend-darken">
+                                OPTICS<br/><span className="italic font-light text-alert text-6xl md:text-9xl">over</span><br/>REALITY
+                            </h2>
+                        </div>
+                        <div className="font-mono text-base md:text-lg space-y-8 bg-paper p-8 border-4 border-ink shadow-[12px_12px_0_0_#d92d20]">
+                            <p className="bg-ink text-paper p-4 text-xl"><strong>Was politics the overriding consideration? <Redacted type="alert">YES.</Redacted></strong></p>
+                            <p><span className="text-alert font-bold uppercase block mb-1">Grandiose Promises</span> Politicians made wildly ambitious promises (<Redacted type="ink">online records for all by 2005</Redacted>) to score political points.</p>
+                            <p><span className="text-alert font-bold uppercase block mb-1">Monolithic Illusion</span> A centralized system sounds revolutionary. A slower, localized approach is efficient but <Redacted type="ink">doesn't generate headlines</Redacted>.</p>
+                            <p><span className="text-alert font-bold uppercase block mb-1">Ignored Feasibility</span> Technical feasibility and clinical efficiency <Redacted type="ink">took a back seat</Redacted> to rigid, politically mandated timelines.</p>
+                        </div>
+                    </div>
+                </div>
+            )
+        }
+
+        function StakeholdersSlide() {
+            return (
+                <div className="flex flex-col justify-center h-full w-full p-12 bg-alert text-paper">
+                    <div className="w-full max-w-6xl mx-auto z-10">
+                         <h2 className="font-serif text-6xl md:text-[100px] mb-12 text-center text-ink font-black"><Typewriter text="THE FALLOUT" speed={100}/></h2>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-0 border-8 border-ink bg-paper text-ink shadow-[16px_16px_0_0_#111111]">
+                            <div className="p-8 md:p-12 border-b-8 md:border-b-0 md:border-r-8 border-ink">
+                                <h3 className="font-serif text-5xl mb-8 italic font-bold">Who Suffered?</h3>
+                                <ul className="font-mono space-y-8 text-sm md:text-base">
+                                    <li className="border-l-4 border-alert pl-4"><strong>Taxpayers:</strong> Footed a £26B bill for botched IT, <Redacted type="alert">£12.7B wasted on NHS alone</Redacted> (half the UK schools' budget).</li>
+                                    <li className="border-l-4 border-alert pl-4"><strong>Patients:</strong> <Redacted type="alert">Failed to receive</Redacted> promised benefits of seamless electronic records.</li>
+                                    <li className="border-l-4 border-alert pl-4"><strong>NHS Staff:</strong> Endured chaotic rollouts and deep frustration with fundamentally flawed systems.</li>
+                                </ul>
+                            </div>
+                            <div className="p-8 md:p-12 bg-ink text-paper relative overflow-hidden">
+                                <div className="absolute top-0 right-0 stamp opacity-20 transform rotate-12 scale-150 border-white text-white">PROFIT</div>
+                                <h3 className="font-serif text-5xl mb-8 italic text-alert font-bold relative z-10">Who Benefited?</h3>
+                                <ul className="font-mono space-y-8 text-sm md:text-base relative z-10">
+                                    <li className="border-l-4 border-paper pl-4"><strong>IT Vendors & Consultancies:</strong> Earned billions in contracts, often paid <Redacted type="alert">despite failing to deliver</Redacted> functional systems.</li>
+                                    <li className="border-l-4 border-paper pl-4"><strong>Legal Firms:</strong> Walked away with <Redacted type="alert">£39.2 million</Redacted> in fees just managing disputes and fallout.</li>
+                                </ul>
+                            </div>
+                         </div>
+                    </div>
+                </div>
+            )
+        }
+
+        function AccountabilitySlide() {
+            return (
+                <div className="flex flex-col justify-center h-full w-full p-12 border-b-[16px] border-ink">
+                    <div className="w-full max-w-6xl mx-auto flex flex-col md:flex-row gap-12 md:gap-16 z-10">
+                        <div className="flex-1 border-t-8 border-ink pt-6">
+                            <h2 className="font-serif text-4xl md:text-5xl font-black mb-8 uppercase">Accountability Mechanisms</h2>
+                            <dl className="font-mono space-y-6">
+                                <div className="bg-white p-4 border-2 border-ink"><dt className="font-bold text-alert text-lg">Independent Audits</dt><dd className="mt-1">Mandatory technical reviews, not just financial.</dd></div>
+                                <div className="bg-white p-4 border-2 border-ink"><dt className="font-bold text-alert text-lg">Phased Funding</dt><dd className="mt-1">Funds released in small tranches tied to usable software delivery.</dd></div>
+                                <div className="bg-white p-4 border-2 border-ink"><dt className="font-bold text-alert text-lg">Transparent Reporting</dt><dd className="mt-1">Open dashboards tracking budget and adoption.</dd></div>
+                                <div className="bg-white p-4 border-2 border-ink"><dt className="font-bold text-alert text-lg">Stop-Loss Protocols</dt><dd className="mt-1">Automatic pause if budget/timeline exceeded.</dd></div>
+                            </dl>
+                        </div>
+                        <div className="flex-1 border-t-8 border-alert pt-6 bg-ink text-paper p-8 mt-0 md:-mt-6 shadow-[16px_16px_0_0_#d92d20]">
+                            <h2 className="font-serif text-4xl md:text-5xl font-black mb-8 uppercase text-alert">Responsibility</h2>
+                            <dl className="font-mono space-y-8">
+                                <div><dt className="font-bold text-white text-xl border-b border-gray-700 pb-2 mb-2">Ministers & Politicians</dt><dd className="text-gray-400">Must bear ultimate political responsibility for championing flawed projects.</dd></div>
+                                <div><dt className="font-bold text-white text-xl border-b border-gray-700 pb-2 mb-2">Civil Servants</dt><dd className="text-gray-400">Project sponsors face professional consequences for <Redacted type="paper">incompetence</Redacted>.</dd></div>
+                                <div><dt className="font-bold text-white text-xl border-b border-gray-700 pb-2 mb-2">IT Vendors</dt><dd className="text-gray-400">Severe financial penalties or refunds if they <Redacted type="paper">fail to deliver</Redacted>.</dd></div>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            )
+        }
+
+        function FrameworkSlide() {
+            return (
+                <div className="flex flex-col justify-center h-full w-full p-12 bg-paper relative">
+                    <div className="w-full max-w-6xl mx-auto z-10">
+                        <h2 className="font-serif text-6xl md:text-8xl mb-12 text-center bg-ink text-paper inline-block px-8 py-2 border-4 border-alert transform -rotate-1">Think • Plan • Act • Check</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 font-mono text-sm mt-8">
+                            <div className="border-4 border-ink p-6 bg-white shadow-[8px_8px_0_0_#111111] hover:-translate-y-2 transition-transform">
+                                <h3 className="text-3xl font-black border-b-4 border-ink pb-2 mb-4">THINK</h3>
+                                <p className="text-alert font-bold mb-2">Failure:</p>
+                                <p className="mb-4">Unrealistic, politically motivated objectives without understanding complexity.</p>
+                                <p className="font-bold mb-2 bg-ink text-white px-2 py-1">Prevention:</p>
+                                <p>Thorough feasibility studies, localized problem solving, heavily consult end-users.</p>
+                            </div>
+                            <div className="border-4 border-ink p-6 bg-white shadow-[8px_8px_0_0_#111111] hover:-translate-y-2 transition-transform">
+                                <h3 className="text-3xl font-black border-b-4 border-ink pb-2 mb-4">PLAN</h3>
+                                <p className="text-alert font-bold mb-2">Failure:</p>
+                                <p className="mb-4">Massive, centralized rollout planned. Budget and time severely underestimated.</p>
+                                <p className="font-bold mb-2 bg-ink text-white px-2 py-1">Prevention:</p>
+                                <p>Iterative, modular rollout. Flexible contracts. Autonomy for local trusts.</p>
+                            </div>
+                            <div className="border-4 border-ink p-6 bg-white shadow-[8px_8px_0_0_#111111] hover:-translate-y-2 transition-transform">
+                                <h3 className="text-3xl font-black border-b-4 border-ink pb-2 mb-4">ACT</h3>
+                                <p className="text-alert font-bold mb-2">Failure:</p>
+                                <p className="mb-4">Systems pushed that didn't work. Low adoption (160/9000).</p>
+                                <p className="font-bold mb-2 bg-ink text-white px-2 py-1">Prevention:</p>
+                                <p>Start with small pilots. Continuous user testing and agile development.</p>
+                            </div>
+                            <div className="border-4 border-alert p-6 bg-alert text-paper shadow-[8px_8px_0_0_#111111] hover:-translate-y-2 transition-transform transform rotate-1">
+                                <h3 className="text-3xl font-black border-b-4 border-paper pb-2 mb-4">CHECK</h3>
+                                <p className="text-ink font-bold mb-2">Failure:</p>
+                                <p className="mb-4">Ignored warning signs early on. Stubbornly pushed forward wasting millions.</p>
+                                <p className="font-bold mb-2 bg-ink text-white px-2 py-1">Prevention:</p>
+                                <p>Strict independent monitoring triggering early cancellation/restructuring.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )
+        }
+
+        // --- MAIN APP COMPONENT ---
+
+        const App = () => {
+            const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+            const [glitchTrigger, setGlitchTrigger] = useState(0);
+            const scrollRef = useRef(null);
+
+            const handleScroll = (e) => {
+                const height = e.target.clientHeight;
+                const scrollY = e.target.scrollTop;
+                // Add slight offset so it triggers right before full snap
+                const index = Math.round(scrollY / height);
+                if (index !== currentSlideIndex) {
+                    setCurrentSlideIndex(index);
+                    setGlitchTrigger(prev => prev + 1);
+                    
+                    // Trigger shake effect on body
+                    document.body.classList.remove('shake-trigger');
+                    void document.body.offsetWidth; // force reflow
+                    document.body.classList.add('shake-trigger');
+                }
+            };
+            
+            // Allow keyboard navigation
+            useEffect(() => {
+                const handleKeyDown = (e) => {
+                    if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === ' ') {
+                        e.preventDefault();
+                        if (currentSlideIndex < slidesData.length - 1) {
+                            const nextIndex = currentSlideIndex + 1;
+                            const element = scrollRef.current.children[nextIndex];
+                            element.scrollIntoView({ behavior: 'smooth' });
+                        }
+                    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                        e.preventDefault();
+                        if (currentSlideIndex > 0) {
+                            const prevIndex = currentSlideIndex - 1;
+                            const element = scrollRef.current.children[prevIndex];
+                            element.scrollIntoView({ behavior: 'smooth' });
+                        }
+                    }
+                };
+                window.addEventListener('keydown', handleKeyDown);
+                return () => window.removeEventListener('keydown', handleKeyDown);
+            }, [currentSlideIndex]);
+
+            return (
+                <div className="relative">
+                    {/* 3D Background rendering layer */}
+                    <ThreeBackground glitchTrigger={glitchTrigger} />
+
+                    {/* HUD - Removed Speaker name, kept minimalist controls */}
+                    <div className="fixed bottom-6 left-8 z-50 font-mono text-xs uppercase tracking-widest bg-paper p-2 text-ink border-2 border-ink shadow-[4px_4px_0_0_#d92d20] flex flex-col gap-1 pointer-events-none">
+                        <div><span className="font-bold">Controls:</span> Arrow Keys / Space / Scroll</div>
+                        <div><span className="font-bold">Interact:</span> Hover over black redacted boxes</div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="fixed left-0 top-0 h-2 bg-ink w-full z-50 shadow-[0_4px_0_0_#d92d20]">
+                        <div 
+                            className="h-full bg-alert transition-all duration-300 ease-out" 
+                            style={{ width: `${((currentSlideIndex + 1) / slidesData.length) * 100}%` }}
+                        />
+                    </div>
+
+                    {/* Main Scroller */}
+                    <div ref={scrollRef} onScroll={handleScroll} className="scroller w-full">
+                        {slidesData.map((slide, i) => (
+                            <section key={slide.id} className="slide">
+                                {slide.content}
+                            </section>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
