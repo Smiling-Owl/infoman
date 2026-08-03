@@ -112,9 +112,12 @@
         }
         .slide {
             scroll-snap-align: start;
-            height: 100vh;
+            min-height: 100vh;
+            min-height: 100dvh;
             position: relative;
-            overflow: hidden;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
         }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #f4f4f0; border-left: 1px solid #111; }
@@ -265,14 +268,14 @@
 
         function IntroSlide() {
             return (
-                <div className="flex flex-col items-center justify-center h-full w-full p-12 border-b-[16px] border-ink">
+                <div className="flex flex-col items-center justify-center flex-1 w-full p-6 py-20 md:p-12 border-b-[16px] border-ink">
                     <div className="w-full max-w-6xl relative z-10">
-                        <div className="absolute -top-16 -left-8 md:-left-16 stamp text-3xl bg-paper">DECLASSIFIED</div>
+                        <div className="absolute -top-12 left-0 md:-top-16 md:-left-16 stamp text-xl md:text-3xl bg-paper">DECLASSIFIED</div>
                         <h1 className="font-serif text-[12vw] md:text-[140px] leading-none tracking-tighter uppercase font-black mix-blend-darken">
                             <Typewriter text="The £12.7B" delay={1000} speed={80} /><br/> 
                             <span className="text-alert"><Typewriter text="Failure" delay={2000} speed={120} /></span>
                         </h1>
-                        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 border-t-4 border-ink pt-6">
+                        <div className="mt-8 md:mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 border-t-4 border-ink pt-6">
                             <div>
                                 <p className="font-mono text-xs uppercase tracking-widest text-gray-500 mb-1">Subject</p>
                                 <p className="font-serif text-2xl font-bold bg-ink text-paper px-2 py-1 inline-block">NHS IT Programme (NPfIT)</p>
@@ -289,11 +292,11 @@
 
         function TheMessSlide() {
             return (
-                <div className="flex flex-col justify-center h-full w-full p-12 bg-ink text-paper border-b-[16px] border-alert">
+                <div className="flex flex-col justify-center flex-1 w-full p-6 py-24 md:p-12 bg-ink text-paper border-b-[16px] border-alert">
                     <div className="w-full max-w-6xl mx-auto z-10">
-                        <p className="font-mono text-sm uppercase tracking-widest text-alert mb-4">01 // The Mess</p>
-                        <h2 className="font-serif text-5xl md:text-8xl mb-12">How did a 'developed' country fail so massively?</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-12 font-mono text-sm md:text-base">
+                        <p className="font-mono text-sm uppercase tracking-widest text-alert mb-2 md:mb-4">01 // The Mess</p>
+                        <h2 className="font-serif text-4xl md:text-8xl mb-8 md:mb-12">How did a 'developed' country fail so massively?</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-8 md:gap-y-12 font-mono text-sm md:text-base">
                             <div className="border-l-4 border-alert pl-6 hover:bg-white/5 transition-colors p-2">
                                 <h3 className="font-bold text-xl mb-2 text-alert">Top-Down Management</h3>
                                 <p>Mandated centrally without consulting end-users. Systems did not align with local clinical workflows. <Redacted type="paper">Only 160 out of 9,000</Redacted> organizations adopted it.</p>
@@ -318,14 +321,14 @@
 
         function PoliticsSlide() {
             return (
-                <div className="flex flex-col justify-center h-full w-full p-12 border-b-[16px] border-ink">
-                    <div className="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 items-center z-10">
+                <div className="flex flex-col justify-center flex-1 w-full p-6 py-24 md:p-12 border-b-[16px] border-ink">
+                    <div className="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center z-10">
                         <div>
-                            <h2 className="font-serif text-7xl md:text-[140px] leading-none font-black text-ink mb-6 mix-blend-darken">
-                                OPTICS<br/><span className="italic font-light text-alert text-6xl md:text-9xl">over</span><br/>REALITY
+                            <h2 className="font-serif text-6xl md:text-[140px] leading-none font-black text-ink mb-6 mix-blend-darken">
+                                OPTICS<br/><span className="italic font-light text-alert text-5xl md:text-9xl">over</span><br/>REALITY
                             </h2>
                         </div>
-                        <div className="font-mono text-base md:text-lg space-y-8 bg-paper p-8 border-4 border-ink shadow-[12px_12px_0_0_#d92d20]">
+                        <div className="font-mono text-sm md:text-lg space-y-4 md:space-y-8 bg-paper p-6 md:p-8 border-4 border-ink shadow-[8px_8px_0_0_#d92d20] md:shadow-[12px_12px_0_0_#d92d20]">
                             <p className="bg-ink text-paper p-4 text-xl"><strong>Was politics the overriding consideration? <Redacted type="alert">YES.</Redacted></strong></p>
                             <p><span className="text-alert font-bold uppercase block mb-1">Grandiose Promises</span> Politicians made wildly ambitious promises (<Redacted type="ink">online records for all by 2005</Redacted>) to score political points.</p>
                             <p><span className="text-alert font-bold uppercase block mb-1">Monolithic Illusion</span> A centralized system sounds revolutionary. A slower, localized approach is efficient but <Redacted type="ink">doesn't generate headlines</Redacted>.</p>
@@ -338,22 +341,22 @@
 
         function StakeholdersSlide() {
             return (
-                <div className="flex flex-col justify-center h-full w-full p-12 bg-alert text-paper">
+                <div className="flex flex-col justify-center flex-1 w-full p-6 py-24 md:p-12 bg-alert text-paper">
                     <div className="w-full max-w-6xl mx-auto z-10">
-                         <h2 className="font-serif text-6xl md:text-[100px] mb-12 text-center text-ink font-black"><Typewriter text="THE FALLOUT" speed={100}/></h2>
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-0 border-8 border-ink bg-paper text-ink shadow-[16px_16px_0_0_#111111]">
-                            <div className="p-8 md:p-12 border-b-8 md:border-b-0 md:border-r-8 border-ink">
-                                <h3 className="font-serif text-5xl mb-8 italic font-bold">Who Suffered?</h3>
-                                <ul className="font-mono space-y-8 text-sm md:text-base">
+                         <h2 className="font-serif text-4xl md:text-[100px] mb-8 md:mb-12 text-center text-ink font-black"><Typewriter text="THE FALLOUT" speed={100}/></h2>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-0 border-4 md:border-8 border-ink bg-paper text-ink shadow-[8px_8px_0_0_#111111] md:shadow-[16px_16px_0_0_#111111]">
+                            <div className="p-6 md:p-12 border-b-4 md:border-b-0 md:border-r-8 border-ink">
+                                <h3 className="font-serif text-3xl md:text-5xl mb-4 md:mb-8 italic font-bold">Who Suffered?</h3>
+                                <ul className="font-mono space-y-4 md:space-y-8 text-sm md:text-base">
                                     <li className="border-l-4 border-alert pl-4"><strong>Taxpayers:</strong> Footed a £26B bill for botched IT, <Redacted type="alert">£12.7B wasted on NHS alone</Redacted> (half the UK schools' budget).</li>
                                     <li className="border-l-4 border-alert pl-4"><strong>Patients:</strong> <Redacted type="alert">Failed to receive</Redacted> promised benefits of seamless electronic records.</li>
                                     <li className="border-l-4 border-alert pl-4"><strong>NHS Staff:</strong> Endured chaotic rollouts and deep frustration with fundamentally flawed systems.</li>
                                 </ul>
                             </div>
-                            <div className="p-8 md:p-12 bg-ink text-paper relative overflow-hidden">
+                            <div className="p-6 md:p-12 bg-ink text-paper relative overflow-hidden">
                                 <div className="absolute top-0 right-0 stamp opacity-20 transform rotate-12 scale-150 border-white text-white">PROFIT</div>
-                                <h3 className="font-serif text-5xl mb-8 italic text-alert font-bold relative z-10">Who Benefited?</h3>
-                                <ul className="font-mono space-y-8 text-sm md:text-base relative z-10">
+                                <h3 className="font-serif text-3xl md:text-5xl mb-4 md:mb-8 italic text-alert font-bold relative z-10">Who Benefited?</h3>
+                                <ul className="font-mono space-y-4 md:space-y-8 text-sm md:text-base relative z-10">
                                     <li className="border-l-4 border-paper pl-4"><strong>IT Vendors & Consultancies:</strong> Earned billions in contracts, often paid <Redacted type="alert">despite failing to deliver</Redacted> functional systems.</li>
                                     <li className="border-l-4 border-paper pl-4"><strong>Legal Firms:</strong> Walked away with <Redacted type="alert">£39.2 million</Redacted> in fees just managing disputes and fallout.</li>
                                 </ul>
@@ -366,20 +369,20 @@
 
         function AccountabilitySlide() {
             return (
-                <div className="flex flex-col justify-center h-full w-full p-12 border-b-[16px] border-ink">
-                    <div className="w-full max-w-6xl mx-auto flex flex-col md:flex-row gap-12 md:gap-16 z-10">
-                        <div className="flex-1 border-t-8 border-ink pt-6">
-                            <h2 className="font-serif text-4xl md:text-5xl font-black mb-8 uppercase">Accountability Mechanisms</h2>
-                            <dl className="font-mono space-y-6">
+                <div className="flex flex-col justify-center flex-1 w-full p-6 py-24 md:p-12 border-b-[16px] border-ink">
+                    <div className="w-full max-w-6xl mx-auto flex flex-col md:flex-row gap-8 md:gap-16 z-10">
+                        <div className="flex-1 border-t-4 md:border-t-8 border-ink pt-4 md:pt-6">
+                            <h2 className="font-serif text-3xl md:text-5xl font-black mb-6 md:mb-8 uppercase">Accountability Mechanisms</h2>
+                            <dl className="font-mono space-y-4 md:space-y-6 text-sm md:text-base">
                                 <div className="bg-white p-4 border-2 border-ink"><dt className="font-bold text-alert text-lg">Independent Audits</dt><dd className="mt-1">Mandatory technical reviews, not just financial.</dd></div>
                                 <div className="bg-white p-4 border-2 border-ink"><dt className="font-bold text-alert text-lg">Phased Funding</dt><dd className="mt-1">Funds released in small tranches tied to usable software delivery.</dd></div>
                                 <div className="bg-white p-4 border-2 border-ink"><dt className="font-bold text-alert text-lg">Transparent Reporting</dt><dd className="mt-1">Open dashboards tracking budget and adoption.</dd></div>
                                 <div className="bg-white p-4 border-2 border-ink"><dt className="font-bold text-alert text-lg">Stop-Loss Protocols</dt><dd className="mt-1">Automatic pause if budget/timeline exceeded.</dd></div>
                             </dl>
                         </div>
-                        <div className="flex-1 border-t-8 border-alert pt-6 bg-ink text-paper p-8 mt-0 md:-mt-6 shadow-[16px_16px_0_0_#d92d20]">
-                            <h2 className="font-serif text-4xl md:text-5xl font-black mb-8 uppercase text-alert">Responsibility</h2>
-                            <dl className="font-mono space-y-8">
+                        <div className="flex-1 border-t-4 md:border-t-8 border-alert pt-4 md:pt-6 bg-ink text-paper p-6 md:p-8 mt-0 md:-mt-6 shadow-[8px_8px_0_0_#d92d20] md:shadow-[16px_16px_0_0_#d92d20]">
+                            <h2 className="font-serif text-3xl md:text-5xl font-black mb-6 md:mb-8 uppercase text-alert">Responsibility</h2>
+                            <dl className="font-mono space-y-4 md:space-y-8 text-sm md:text-base">
                                 <div><dt className="font-bold text-white text-xl border-b border-gray-700 pb-2 mb-2">Ministers & Politicians</dt><dd className="text-gray-400">Must bear ultimate political responsibility for championing flawed projects.</dd></div>
                                 <div><dt className="font-bold text-white text-xl border-b border-gray-700 pb-2 mb-2">Civil Servants</dt><dd className="text-gray-400">Project sponsors face professional consequences for <Redacted type="paper">incompetence</Redacted>.</dd></div>
                                 <div><dt className="font-bold text-white text-xl border-b border-gray-700 pb-2 mb-2">IT Vendors</dt><dd className="text-gray-400">Severe financial penalties or refunds if they <Redacted type="paper">fail to deliver</Redacted>.</dd></div>
@@ -392,36 +395,36 @@
 
         function FrameworkSlide() {
             return (
-                <div className="flex flex-col justify-center h-full w-full p-12 bg-paper relative">
+                <div className="flex flex-col justify-center flex-1 w-full p-6 py-24 md:p-12 bg-paper relative">
                     <div className="w-full max-w-6xl mx-auto z-10">
-                        <h2 className="font-serif text-6xl md:text-8xl mb-12 text-center bg-ink text-paper inline-block px-8 py-2 border-4 border-alert transform -rotate-1">Think • Plan • Act • Check</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 font-mono text-sm mt-8">
-                            <div className="border-4 border-ink p-6 bg-white shadow-[8px_8px_0_0_#111111] hover:-translate-y-2 transition-transform">
-                                <h3 className="text-3xl font-black border-b-4 border-ink pb-2 mb-4">THINK</h3>
-                                <p className="text-alert font-bold mb-2">Failure:</p>
-                                <p className="mb-4">Unrealistic, politically motivated objectives without understanding complexity.</p>
-                                <p className="font-bold mb-2 bg-ink text-white px-2 py-1">Prevention:</p>
+                        <h2 className="font-serif text-4xl md:text-8xl mb-8 md:mb-12 text-center bg-ink text-paper inline-block px-4 md:px-8 py-2 border-4 border-alert transform -rotate-1">Think • Plan • Act • Check</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 font-mono text-xs md:text-sm mt-4 md:mt-8">
+                            <div className="border-2 md:border-4 border-ink p-4 md:p-6 bg-white shadow-[4px_4px_0_0_#111111] md:shadow-[8px_8px_0_0_#111111] hover:-translate-y-2 transition-transform">
+                                <h3 className="text-xl md:text-3xl font-black border-b-2 md:border-b-4 border-ink pb-2 mb-2 md:mb-4">THINK</h3>
+                                <p className="text-alert font-bold mb-1 md:mb-2">Failure:</p>
+                                <p className="mb-2 md:mb-4">Unrealistic, politically motivated objectives without understanding complexity.</p>
+                                <p className="font-bold mb-1 md:mb-2 bg-ink text-white px-2 py-1 inline-block">Prevention:</p>
                                 <p>Thorough feasibility studies, localized problem solving, heavily consult end-users.</p>
                             </div>
-                            <div className="border-4 border-ink p-6 bg-white shadow-[8px_8px_0_0_#111111] hover:-translate-y-2 transition-transform">
-                                <h3 className="text-3xl font-black border-b-4 border-ink pb-2 mb-4">PLAN</h3>
-                                <p className="text-alert font-bold mb-2">Failure:</p>
-                                <p className="mb-4">Massive, centralized rollout planned. Budget and time severely underestimated.</p>
-                                <p className="font-bold mb-2 bg-ink text-white px-2 py-1">Prevention:</p>
+                            <div className="border-2 md:border-4 border-ink p-4 md:p-6 bg-white shadow-[4px_4px_0_0_#111111] md:shadow-[8px_8px_0_0_#111111] hover:-translate-y-2 transition-transform">
+                                <h3 className="text-xl md:text-3xl font-black border-b-2 md:border-b-4 border-ink pb-2 mb-2 md:mb-4">PLAN</h3>
+                                <p className="text-alert font-bold mb-1 md:mb-2">Failure:</p>
+                                <p className="mb-2 md:mb-4">Massive, centralized rollout planned. Budget and time severely underestimated.</p>
+                                <p className="font-bold mb-1 md:mb-2 bg-ink text-white px-2 py-1 inline-block">Prevention:</p>
                                 <p>Iterative, modular rollout. Flexible contracts. Autonomy for local trusts.</p>
                             </div>
-                            <div className="border-4 border-ink p-6 bg-white shadow-[8px_8px_0_0_#111111] hover:-translate-y-2 transition-transform">
-                                <h3 className="text-3xl font-black border-b-4 border-ink pb-2 mb-4">ACT</h3>
-                                <p className="text-alert font-bold mb-2">Failure:</p>
-                                <p className="mb-4">Systems pushed that didn't work. Low adoption (160/9000).</p>
-                                <p className="font-bold mb-2 bg-ink text-white px-2 py-1">Prevention:</p>
+                            <div className="border-2 md:border-4 border-ink p-4 md:p-6 bg-white shadow-[4px_4px_0_0_#111111] md:shadow-[8px_8px_0_0_#111111] hover:-translate-y-2 transition-transform">
+                                <h3 className="text-xl md:text-3xl font-black border-b-2 md:border-b-4 border-ink pb-2 mb-2 md:mb-4">ACT</h3>
+                                <p className="text-alert font-bold mb-1 md:mb-2">Failure:</p>
+                                <p className="mb-2 md:mb-4">Systems pushed that didn't work. Low adoption (160/9000).</p>
+                                <p className="font-bold mb-1 md:mb-2 bg-ink text-white px-2 py-1 inline-block">Prevention:</p>
                                 <p>Start with small pilots. Continuous user testing and agile development.</p>
                             </div>
-                            <div className="border-4 border-alert p-6 bg-alert text-paper shadow-[8px_8px_0_0_#111111] hover:-translate-y-2 transition-transform transform rotate-1">
-                                <h3 className="text-3xl font-black border-b-4 border-paper pb-2 mb-4">CHECK</h3>
-                                <p className="text-ink font-bold mb-2">Failure:</p>
-                                <p className="mb-4">Ignored warning signs early on. Stubbornly pushed forward wasting millions.</p>
-                                <p className="font-bold mb-2 bg-ink text-white px-2 py-1">Prevention:</p>
+                            <div className="border-2 md:border-4 border-alert p-4 md:p-6 bg-alert text-paper shadow-[4px_4px_0_0_#111111] md:shadow-[8px_8px_0_0_#111111] hover:-translate-y-2 transition-transform transform rotate-1">
+                                <h3 className="text-xl md:text-3xl font-black border-b-2 md:border-b-4 border-paper pb-2 mb-2 md:mb-4">CHECK</h3>
+                                <p className="text-ink font-bold mb-1 md:mb-2">Failure:</p>
+                                <p className="mb-2 md:mb-4">Ignored warning signs early on. Stubbornly pushed forward wasting millions.</p>
+                                <p className="font-bold mb-1 md:mb-2 bg-ink text-white px-2 py-1 inline-block">Prevention:</p>
                                 <p>Strict independent monitoring triggering early cancellation/restructuring.</p>
                             </div>
                         </div>
@@ -482,9 +485,9 @@
                     <ThreeBackground glitchTrigger={glitchTrigger} />
 
                     {/* HUD - Removed Speaker name, kept minimalist controls */}
-                    <div className="fixed bottom-6 left-8 z-50 font-mono text-xs uppercase tracking-widest bg-paper p-2 text-ink border-2 border-ink shadow-[4px_4px_0_0_#d92d20] flex flex-col gap-1 pointer-events-none">
-                        <div><span className="font-bold">Controls:</span> Arrow Keys / Space / Scroll</div>
-                        <div><span className="font-bold">Interact:</span> Hover over black redacted boxes</div>
+                    <div className="fixed bottom-4 left-4 md:bottom-6 md:left-8 z-50 font-mono text-[9px] md:text-xs uppercase tracking-widest bg-paper p-2 text-ink border-2 border-ink shadow-[4px_4px_0_0_#d92d20] flex flex-col gap-1 pointer-events-none">
+                        <div><span className="font-bold">Controls:</span> <span className="hidden md:inline">Arrow Keys / Space / </span>Scroll</div>
+                        <div><span className="font-bold">Interact:</span> Hover<span className="hidden md:inline"> over redacted text</span></div>
                     </div>
 
                     {/* Progress Bar */}
